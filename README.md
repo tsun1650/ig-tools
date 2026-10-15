@@ -18,6 +18,8 @@ To rebuild with Xcode's Swift toolchain:
 
 This creates an ad-hoc signed application for your current Mac architecture. You can also open `Package.swift` in Xcode and run the StoryPreview executable scheme. Distribution signing and notarization are not included.
 
+The packaged app uses the Jade glass icon from `Assets/IconConcepts/jade-glass.png`. The build script creates standard and Retina icon sizes with macOS `sips`, packages them with `iconutil`, and embeds `AppIcon.icns` in the app bundle. The other two icon concepts and generation prompts are retained in `Assets/IconConcepts`.
+
 ## Use
 
 1. Click **Open Folder…** (⌘O). Images in that folder appear in filename order; subfolders are not scanned.
