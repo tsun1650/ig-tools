@@ -74,6 +74,36 @@ final class CompositionTests: XCTestCase {
 
 
 extension CompositionTests {
+    func testTrackpadPanInBothAxesWithBorders() {
+        var c = Composition(); c.borders = true
+        c.pan(by: CGSize(width: 54, height: -96), canvas: story, image: landscape)
+        XCTAssertEqual(c.offset.width, 0.05, accuracy: 0.0001)
+        XCTAssertEqual(c.offset.height, -0.05, accuracy: 0.0001)
+        let centered = Composition().frame(image: landscape, canvas: story)
+        XCTAssertTrue(centered.width > 0)
+        // Normalized positioning preserves the composition when the window resizes.
+        let smallFrame = c.frame(image: landscape, canvas: story)
+        let largerCanvas = CGSize(width: story.width * 2, height: story.height * 2)
+        let largeFrame = c.frame(image: landscape, canvas: largerCanvas)
+        XCTAssertEqual(smallFrame.midX / story.width, largeFrame.midX / largerCanvas.width, accuracy: 0.0001)
+        XCTAssertEqual(smallFrame.midY / story.height, largeFrame.midY / largerCanvas.height, accuracy: 0.0001)
+    }
+    func testTrackpadPanClampsAndReversesAtFillEdge() {
+        var c = Composition(); c.zoom = 2
+        c.pan(by: CGSize(width: 100000, height: 100000), canvas: story, image: landscape)
+        let edge = c.frame(image: landscape, canvas: story)
+        XCTAssertEqual(edge.minX, 0, accuracy: 0.0001)
+        XCTAssertEqual(edge.minY, 0, accuracy: 0.0001)
+        c.pan(by: CGSize(width: -10, height: -10), canvas: story, image: landscape)
+        let reversed = c.frame(image: landscape, canvas: story)
+        XCTAssertEqual(reversed.minX, -10, accuracy: 0.0001)
+        XCTAssertEqual(reversed.minY, -10, accuracy: 0.0001)
+    }
+    func testTrackpadPanIgnoresInvalidCanvas() {
+        var c = Composition()
+        c.pan(by: CGSize(width: 30, height: 30), canvas: .zero, image: landscape)
+        XCTAssertEqual(c.offset, .zero)
+    }
     func testImageCacheReusesDecodedImage() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
         defer { try? FileManager.default.removeItem(at: url) }

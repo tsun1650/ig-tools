@@ -37,8 +37,12 @@ struct EditorView: View {
                         } else if failed { Label("This image could not be decoded.", systemImage: "exclamationmark.triangle") }
                         else { ProgressView() }
                     }
+                    .background(ScrollPanCapture { delta in
+                        guard image != nil else { return }
+                        composition.pan(by: delta, canvas: size, image: photo.size)
+                    })
                 }
-                Text("Drag to position · Pinch or use the slider to zoom").font(.caption).foregroundStyle(.secondary).padding(12)
+                Text("Drag or scroll with two fingers to position · Pinch to zoom").font(.caption).foregroundStyle(.secondary).padding(12)
             }
             Divider()
             ScrollView {
@@ -101,7 +105,8 @@ struct EditorView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Reset Composition") { composition = Composition() }
                         .buttonStyle(.plain).foregroundStyle(.secondary)
-
+                    Divider()
+                    PhotoInfoView(photo: photo)
                 }.padding(20).textFieldStyle(.roundedBorder)
                     .font(.system(size: 12))
             }.frame(width: 280).background(Color(nsColor: .controlBackgroundColor).opacity(0.45))

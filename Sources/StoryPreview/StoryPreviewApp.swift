@@ -22,9 +22,7 @@ struct WorkspaceView: View {
             if model.folder == nil {
                 welcome
             } else {
-                HSplitView {
-                    FolderSidebar(model: model)
-                        .frame(minWidth: 145, idealWidth: 160, maxWidth: 200)
+                Group {
                     if let photo = model.selected {
                         if model.editing {
                             EditorView(photo: photo, composition: model.binding(photo), model: model).id(photo.id)
@@ -85,22 +83,6 @@ struct WorkspaceView: View {
     }
 }
 
-struct FolderSidebar: View {
-    @ObservedObject var model: Workspace
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("FOLDER").font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary).padding(.horizontal, 8)
-            Label(model.folder?.lastPathComponent ?? "Photos", systemImage: "folder")
-                .font(.system(size: 13)).lineLimit(1).padding(8).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
-                .help(model.folder?.path ?? "")
-            Text("\(model.photos.count) photos").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
-            Spacer()
-        }.padding(.horizontal, 10).padding(.top, 22)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-    }
-}
-
 struct GalleryView: View {
     @ObservedObject var model: Workspace
     @FocusState private var galleryFocused: Bool
@@ -139,15 +121,16 @@ struct GalleryView: View {
                         }
                     }
                 }
-            }.frame(minWidth: 360, idealWidth: 550)
+            }.frame(minWidth: 200, idealWidth: 500)
             if let photo = model.selected {
                 VStack(spacing: 14) {
                     PhotoImage(url: photo.url, maxPixel: 2400)
-                        .id(photo.id).frame(maxHeight: 340).padding(.bottom, 6)
+                        .id(photo.id).frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .layoutPriority(1).padding(.bottom, 6)
                     Text(photo.url.lastPathComponent).font(.system(size: 13, weight: .medium)).lineLimit(2).textSelection(.enabled)
                     Text("\(Int(photo.size.width)) × \(Int(photo.size.height))").font(.caption).foregroundStyle(.secondary)
                     Button("Edit Photo") { model.editing = true }.buttonStyle(.borderedProminent).padding(.top, 2)
-                }.padding(24).frame(minWidth: 240, idealWidth: 340, maxWidth: 430, maxHeight: .infinity)
+                }.padding(24).frame(minWidth: 200, idealWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(nsColor: .controlBackgroundColor).opacity(0.45))
             }
         }.onAppear { galleryFocused = true }

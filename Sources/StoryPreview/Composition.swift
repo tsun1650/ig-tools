@@ -32,6 +32,14 @@ struct Composition {
         let rect = frame(image: image, canvas: canvas)
         offset = CGSize(width: (rect.midX - canvas.width / 2) / canvas.width, height: (rect.midY - canvas.height / 2) / canvas.height)
     }
+    mutating func pan(by delta: CGSize, canvas: CGSize, image: CGSize) {
+        guard canvas.width > 0, canvas.height > 0,
+              canvas.width.isFinite, canvas.height.isFinite,
+              delta.width.isFinite, delta.height.isFinite else { return }
+        offset.width += delta.width / canvas.width
+        offset.height += delta.height / canvas.height
+        constrainOffset(image: image)
+    }
     func outputSize(width: Int, image: CGSize) -> CGSize {
         let outputWidth = min(Double(max(1, width)), floor(8192 * ratio(image: image)))
         return CGSize(width: outputWidth, height: max(1.0, (outputWidth / ratio(image: image)).rounded()))
