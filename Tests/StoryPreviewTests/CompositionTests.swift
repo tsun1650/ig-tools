@@ -121,3 +121,74 @@ extension CompositionTests {
         XCTAssertNil(loader.cached(url, maxPixel: 240))
     }
 }
+
+extension CompositionTests {
+    func testRotationWrapResetAndOriginalRatio() {
+        var c = Composition(); c.preset = "Original"
+        c.rotate(by: 90, image: landscape)
+        XCTAssertEqual(c.outputSize(width: 1080, image: landscape), CGSize(width: 1080, height: 2160))
+        c.rotate(by: -90, image: landscape)
+        XCTAssertEqual(c.rotation, 0)
+        c.rotate(by: 450.25, image: landscape)
+        XCTAssertEqual(c.rotation, 90.25)
+        c.rotate(by: .infinity, image: landscape)
+        XCTAssertEqual(c.rotation, 0)
+        XCTAssertEqual(Composition().rotation, 0)
+    }
+
+    func testRotatedFillCoversCornersAndFitRespectsPadding() {
+        for angle in [-90.0, -31.25, 0, 45, 90, 180, 270] {
+            var c = Composition(); c.rotation = angle; c.zoom = 1.5
+            c.offset = CGSize(width: 100, height: -100)
+            let f = c.frame(image: landscape, canvas: story)
+            let cosine = cos(c.rotationRadians), sine = sin(c.rotationRadians)
+            for x in [0.0, story.width] {
+                for y in [0.0, story.height] {
+                    let dx = x - f.midX, dy = y - f.midY
+                    XCTAssertLessThanOrEqual(abs(cosine * dx + sine * dy), f.width / 2 + 0.001)
+                    XCTAssertLessThanOrEqual(abs(-sine * dx + cosine * dy), f.height / 2 + 0.001)
+                }
+            }
+            c.borders = true; c.zoom = 1; c.offset = .zero
+            let fit = c.frame(image: landscape, canvas: story)
+            let bounds = c.rotatedSize(image: fit.size)
+            XCTAssertLessThanOrEqual(bounds.width, story.width * 0.9 + 0.001)
+            XCTAssertLessThanOrEqual(bounds.height, story.height * 0.9 + 0.001)
+        }
+    }
+
+    func testRotationDirectionAndExportPixels() throws {
+        let space = CGColorSpace(name: CGColorSpace.sRGB)!
+        let ctx = CGContext(data: nil, width: 120, height: 60, bitsPerComponent: 8, bytesPerRow: 0, space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.setFillColor(NSColor.red.cgColor); ctx.fill(CGRect(x: 0, y: 0, width: 60, height: 60))
+        ctx.setFillColor(NSColor.blue.cgColor); ctx.fill(CGRect(x: 60, y: 0, width: 60, height: 60))
+        let image = try XCTUnwrap(ctx.makeImage())
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let source = dir.appendingPathComponent("source.png")
+        let dest = CGImageDestinationCreateWithURL(source as CFURL, UTType.png.identifier as CFString, 1, nil)!
+        CGImageDestinationAddImage(dest, image, nil); XCTAssertTrue(CGImageDestinationFinalize(dest))
+        let photo = try XCTUnwrap(Imaging.photo(source))
+        for angle in [-90.0, 90] {
+            var c = Composition(); c.preset = "Original"; c.rotation = angle
+            let preview = try XCTUnwrap(Imaging.render(image: image, composition: c, size: CGSize(width: 60, height: 120)))
+            let bytes = try XCTUnwrap(preview.dataProvider?.data) as Data
+            let top = 10 * preview.bytesPerRow + 30 * 4
+            let bottom = 110 * preview.bytesPerRow + 30 * 4
+            XCTAssertEqual(bytes[top], angle > 0 ? 255 : 0)
+            XCTAssertEqual(bytes[bottom], angle > 0 ? 0 : 255)
+            let output = dir.appendingPathComponent("rotated\(angle).png")
+            try Imaging.export(photo: photo, composition: c, width: 60, png: true, destination: output)
+            let exported = try XCTUnwrap(Imaging.load(output, maxPixel: 120))
+            XCTAssertEqual(exported.width, 60); XCTAssertEqual(exported.height, 120)
+            var unedited = Composition(); unedited.preset = "Original"
+            let decoded = try XCTUnwrap(Imaging.render(image: exported, composition: unedited, size: CGSize(width: 60, height: 120)))
+            let exportedBytes = try XCTUnwrap(decoded.dataProvider?.data) as Data
+            XCTAssertEqual(exportedBytes[top], bytes[top])
+            XCTAssertEqual(exportedBytes[top + 2], bytes[top + 2])
+            XCTAssertEqual(exportedBytes[bottom], bytes[bottom])
+            XCTAssertEqual(exportedBytes[bottom + 2], bytes[bottom + 2])
+        }
+    }
+}

@@ -18,10 +18,11 @@ final class ImageLoader: @unchecked Sendable {
         return "\(url.path)|\(size)|\(values?.contentModificationDate?.timeIntervalSince1970 ?? 0)|\(values?.fileSize ?? 0)"
     }
     func cached(_ url: URL, maxPixel: Int) -> CGImage? { cache.object(forKey: key(url, maxPixel) as NSString) }
-    func load(_ url: URL, maxPixel: Int) async -> CGImage? {
+    func load(_ url: URL, maxPixel: Int, priority: Operation.QueuePriority = .normal) async -> CGImage? {
         let key = key(url, maxPixel)
         if let image = cache.object(forKey: key as NSString) { return image }
         let operation = BlockOperation()
+        operation.queuePriority = priority
         return await withTaskCancellationHandler(operation: {
             await withCheckedContinuation { continuation in
                 operation.addExecutionBlock { [self, weak operation] in

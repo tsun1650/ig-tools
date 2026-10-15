@@ -67,6 +67,26 @@ struct EditorView: View {
                         Text("Zoom · \(composition.zoom, specifier: "%.2f")×")
                         Slider(value: $composition.zoom, in: (composition.borders ? 0.1 : 1)...5)
                     }
+                    HStack(spacing: 8) {
+                        Text("Rotation")
+                        TextField("Degrees", value: Binding(
+                            get: { composition.rotation },
+                            set: { value in
+                                composition.rotate(by: value - composition.rotation, image: photo.size)
+                            }), format: .number.precision(.fractionLength(0...2)))
+                            .accessibilityLabel("Rotation in degrees")
+                        Text("°").foregroundStyle(.secondary)
+                        Button {
+                            composition.rotate(by: -90, image: photo.size)
+                        } label: { Image(systemName: "rotate.left") }
+                            .help("Rotate left 90°")
+                            .accessibilityLabel("Rotate left 90 degrees")
+                        Button {
+                            composition.rotate(by: 90, image: photo.size)
+                        } label: { Image(systemName: "rotate.right") }
+                            .help("Rotate right 90°")
+                            .accessibilityLabel("Rotate right 90 degrees")
+                    }
                     if composition.borders {
                         Picker("Background", selection: $composition.blurred) { Text("Solid color").tag(false); Text("Blurred photo").tag(true) }
                         if composition.blurred {

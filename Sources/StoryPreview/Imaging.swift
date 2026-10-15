@@ -26,7 +26,8 @@ enum Imaging {
         ctx.setFillColor((composition.color.usingColorSpace(.sRGB) ?? .white).cgColor)
         ctx.fill(CGRect(origin: .zero, size: size))
         if composition.borders && composition.blurred {
-            let input = CIImage(cgImage: image)
+            let rotated = CIImage(cgImage: image).transformed(by: CGAffineTransform(rotationAngle: -composition.rotationRadians))
+            let input = rotated.transformed(by: CGAffineTransform(translationX: -rotated.extent.minX, y: -rotated.extent.minY))
             let s = max(size.width/input.extent.width, size.height/input.extent.height)
             let scaled = input.transformed(by: CGAffineTransform(scaleX: s, y: s))
             let centered = scaled.transformed(by: CGAffineTransform(translationX: (size.width-scaled.extent.width)/2, y: (size.height-scaled.extent.height)/2))
@@ -36,7 +37,9 @@ enum Imaging {
         let topFrame = composition.frame(image: CGSize(width: image.width, height: image.height), canvas: size)
         let frame = CGRect(x: topFrame.minX, y: size.height-topFrame.maxY, width: topFrame.width, height: topFrame.height)
         ctx.interpolationQuality = .high
-        ctx.draw(image, in: frame)
+        ctx.translateBy(x: frame.midX, y: frame.midY)
+        ctx.rotate(by: -composition.rotationRadians)
+        ctx.draw(image, in: CGRect(x: -frame.width / 2, y: -frame.height / 2, width: frame.width, height: frame.height))
         return ctx.makeImage()
     }
     static func export(photo: Photo, composition: Composition, width: Int, png: Bool, destination: URL) throws {

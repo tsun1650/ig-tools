@@ -26,6 +26,8 @@ The Jade glass source icon lives in `Assets/IconConcepts/jade-glass.png`. The sc
 
 Fill mode clamps photo positioning at the edges so the canvas remains covered. Fit mode preserves the photo's aspect ratio inside the chosen horizontal and vertical margins. Trackpad panning uses AppKit scroll deltas and respects the system scrolling preference.
 
+Rotation supports fractional degree input and left/right 90° buttons. Positive angles rotate clockwise. Preview, blurred backgrounds, and exports share the rotation; Fill covers the rotated canvas corners and Fit uses the rotated bounds for padding. Original format follows the rotated bounds. Rotation is stored with each photo’s in-memory composition and cleared by Reset Composition.
+
 Default export width is 1080 pixels. Width input is limited to 64–4096 pixels; extreme custom ratios reduce it as needed to keep height within 8192 pixels. Custom ratios are limited to 1:20–20:1. JPEG exports use 0.95 quality. Both JPEG and PNG are rendered in sRGB and omit source metadata, including location.
 
 Edits are held in memory per file and are discarded when the app closes. Persistent projects, batch export, Photos library access, and subfolder navigation are outside the current implementation.

@@ -100,7 +100,18 @@ struct GalleryView: View {
                     HStack {
                         Text(model.folder?.lastPathComponent ?? "Photos")
                         Spacer()
-                        Text("Name ↑").foregroundStyle(.secondary).font(.caption)
+                        Button {
+                            model.toggleNameSort()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Name")
+                                Image(systemName: model.nameAscending ? "arrow.up" : "arrow.down")
+                            }
+                        }
+                        .buttonStyle(.plain).foregroundStyle(.secondary).font(.caption)
+                        .help(model.nameAscending ? "Sort by name descending" : "Sort by name ascending")
+                        .accessibilityLabel("Sort by name")
+                        .accessibilityValue(model.nameAscending ? "Ascending" : "Descending")
                     }.padding(.horizontal, 20).padding(.vertical, 14)
                     Divider()
                     ScrollViewReader { proxy in
