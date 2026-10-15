@@ -24,10 +24,16 @@ struct WorkspaceView: View {
             } else {
                 Group {
                     if let photo = model.selected {
-                        if model.editing {
-                            EditorView(photo: photo, composition: model.binding(photo), model: model).id(photo.id)
-                        } else {
+                        ZStack {
+                            // Keep the native scroll view and split-pane sizes alive
+                            // while editing, rather than recreating the gallery at the top.
                             GalleryView(model: model)
+                                .opacity(model.editing ? 0 : 1)
+                                .allowsHitTesting(!model.editing)
+                                .accessibilityHidden(model.editing)
+                            if model.editing {
+                                EditorView(photo: photo, composition: model.binding(photo), model: model).id(photo.id)
+                            }
                         }
                     } else if model.loading {
                         ProgressView("Reading photos…").frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -133,7 +139,9 @@ struct GalleryView: View {
                 }.padding(24).frame(minWidth: 200, idealWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(nsColor: .controlBackgroundColor).opacity(0.45))
             }
-        }.onAppear { galleryFocused = true }
+        }
+        .onAppear { galleryFocused = !model.editing }
+        .onChange(of: model.editing) { _, editing in galleryFocused = !editing }
     }
     private func thumbnail(_ item: Photo) -> some View {
         VStack(spacing: 7) {
